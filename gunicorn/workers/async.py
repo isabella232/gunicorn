@@ -94,7 +94,8 @@ class AsyncWorker(base.Worker):
                 resp.force_close()
                 self.alive = False
 
-            if not self.cfg.keepalive:
+            # always close if not alive to drain KA requests
+            if not self.alive or not self.cfg.keepalive:
                 resp.force_close()
 
             respiter = self.wsgi(environ, resp.start_response)

@@ -334,6 +334,10 @@ class Arbiter(object):
         killed gracefully  (ie. trying to wait for the current connection)
         """
         self.LISTENERS = []
+        # immediately close listeners before killing workers
+        # otherwise we leave unassigned in flight requests hanging
+        for l in self.LISTENERS:
+            l.close()
         sig = signal.SIGTERM
         if not graceful:
             sig = signal.SIGQUIT
