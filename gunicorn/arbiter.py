@@ -333,11 +333,11 @@ class Arbiter(object):
         :attr graceful: boolean, If True (the default) workers will be
         killed gracefully  (ie. trying to wait for the current connection)
         """
-        self.LISTENERS = []
         # immediately close listeners before killing workers
         # otherwise we leave unassigned in flight requests hanging
         for l in self.LISTENERS:
             l.close()
+        self.LISTENERS = []
         sig = signal.SIGTERM
         if not graceful:
             sig = signal.SIGQUIT
