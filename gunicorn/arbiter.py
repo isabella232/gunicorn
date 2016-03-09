@@ -121,7 +121,8 @@ class Arbiter(object):
         self.pid = os.getpid()
         if self.cfg.pidfile is not None:
             self.pidfile = Pidfile(self.cfg.pidfile)
-            self.pidfile.create(self.pid)
+            if not self.cfg.delay_pidfile:
+                self.pidfile.create(self.pid)
         self.cfg.on_starting(self)
 
         self.init_signals()
@@ -167,6 +168,8 @@ class Arbiter(object):
         util._setproctitle("master [%s]" % self.proc_name)
 
         self.manage_workers()
+        if self.cfg.delay_pidfile and self.pidfile is not None:
+            self.pidfile.create(self.pid)
         while True:
             try:
                 sig = self.SIG_QUEUE.pop(0) if len(self.SIG_QUEUE) else None
