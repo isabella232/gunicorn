@@ -119,10 +119,9 @@ class Arbiter(object):
         self.log.info("Starting gunicorn %s", __version__)
 
         self.pid = os.getpid()
-        if self.cfg.pidfile is not None:
+        if self.cfg.pidfile is not None and not self.cfg.delay_pidfile:
             self.pidfile = Pidfile(self.cfg.pidfile)
-            if not self.cfg.delay_pidfile:
-                self.pidfile.create(self.pid)
+            self.pidfile.create(self.pid)
         self.cfg.on_starting(self)
 
         self.init_signals()
@@ -168,8 +167,6 @@ class Arbiter(object):
         util._setproctitle("master [%s]" % self.proc_name)
 
         self.manage_workers()
-        if self.cfg.delay_pidfile and self.pidfile is not None:
-            self.pidfile.create(self.pid)
         while True:
             try:
                 sig = self.SIG_QUEUE.pop(0) if len(self.SIG_QUEUE) else None
@@ -497,6 +494,17 @@ class Arbiter(object):
         while len(workers) > self.num_workers:
             (pid, _) = workers.pop(0)
             self.kill_worker(pid, signal.SIGTERM)
+
+        if self.pidfile is None and self.cfg.pidfile is not None and self.cfg.delay_pidfile:
+            worker_values = list(self.WORKERS.values())
+            booted = True
+            for worker in worker_values:
+                if not worker.booted:
+                    booted = False
+                    break
+            if booted:
+                self.pidfile = Pidfile(self.cfg.pidfile)
+                self.pidfile.create(self.pid)
 
         self.log.debug("{0} workers".format(len(workers)),
                         extra={ "metric": "gunicorn.workers",
