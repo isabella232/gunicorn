@@ -495,11 +495,13 @@ class Arbiter(object):
             (pid, _) = workers.pop(0)
             self.kill_worker(pid, signal.SIGTERM)
 
+        # Use worker.start_time != worker.tmp.last_update() as a proxy for worker.boot,
+        # since worker.boot is only updated in the worker process
         if self.pidfile is None and self.cfg.pidfile is not None and self.cfg.delay_pidfile:
             worker_values = list(self.WORKERS.values())
             booted = True
             for worker in worker_values:
-                if not worker.booted:
+                if worker.tmp.last_update() == worker.start_time:
                     booted = False
                     break
             if booted:
