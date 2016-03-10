@@ -316,6 +316,9 @@ class Arbiter(object):
                     pass
 
             timeout = self.timeout - (time.time() - oldest)
+            # wake up every second if we're waiting on a delayed pidfile to be written
+            if self.pidfile is None and self.cfg.pidfile is not None and self.cfg.delay_pidfile:
+                timeout = 1.0
             # The timeout can be reached, so don't wait for a negative value
             timeout = max(timeout, 1.0)
         else:
