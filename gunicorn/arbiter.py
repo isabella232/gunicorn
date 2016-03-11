@@ -258,6 +258,7 @@ class Arbiter(object):
         """
         self.kill_workers(signal.SIGUSR1)
         self.log.reopen_files()
+        self.log.close_on_exec()
 
     def handle_usr2(self):
         """\
