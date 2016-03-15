@@ -53,10 +53,13 @@ class AsyncWorker(base.Worker):
                 exc_info = sys.exc_info()
                 # pass to next try-except level
                 six.reraise(exc_info[0], exc_info[1], exc_info[2])
-            except socket.error:
-                exc_info = sys.exc_info()
-                # pass to next try-except level
-                six.reraise(exc_info[0], exc_info[1], exc_info[2])
+            except socket.error, err_info:
+                if err_info and isinstance(err_info, list) and err_info[0] == errno.EPIPE:
+                    self.log.info("Broken Pipe")
+                else:
+                    exc_info = sys.exc_info()
+                    # pass to next try-except level
+                    six.reraise(exc_info[0], exc_info[1], exc_info[2])
             except Exception as e:
                 self.handle_error(req, client, addr, e)
         except ssl.SSLError as e:
