@@ -38,12 +38,17 @@ class AsyncWorker(base.Worker):
                     self.handle_request(listener_name, req, client, addr)
                 else:
                     # keepalive loop
+                    proxy_protocol_info = {}
                     while True:
                         req = None
                         with self.timeout_ctx():
                             req = six.next(parser)
                         if not req:
                             break
+                        if req.proxy_protocol_info:
+                            proxy_protocol_info = req.proxy_protocol_info
+                        else:
+                            req.proxy_protocol_info = proxy_protocol_info
                         self.handle_request(listener_name, req, client, addr)
             except http.errors.NoMoreData as e:
                 self.log.debug("Ignored premature client disconnection. %s", e)
@@ -94,8 +99,7 @@ class AsyncWorker(base.Worker):
                 resp.force_close()
                 self.alive = False
 
-            # always close if not alive to drain KA requests
-            if not self.alive or not self.cfg.keepalive:
+            if not self.cfg.keepalive:
                 resp.force_close()
 
             respiter = self.wsgi(environ, resp.start_response)
@@ -117,11 +121,18 @@ class AsyncWorker(base.Worker):
                 raise StopIteration()
         except StopIteration:
             raise
-        except Exception:
+        except socket.error, err_info:
+            if err_info and isinstance(err_info, list) and err_info[0] == errno.EPIPE:
+                self.log.info("Broken Pipe")
+            else:
+                # If the original exception was a socket.error we delegate
+                # handling it to the caller (where handle() might ignore it)
+                six.reraise(*sys.exc_info())
+        except Exception as e:
             if resp and resp.headers_sent:
                 # If the requests have already been sent, we should close the
                 # connection to indicate the error.
-                self.log.info("Error handling request")
+                self.log.exception("Error handling request")
                 try:
                     sock.shutdown(socket.SHUT_RDWR)
                     sock.close()

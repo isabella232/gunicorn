@@ -192,7 +192,7 @@ class Worker(object):
                                     )
                           )
         else:
-            self.log.info("Error handling request")
+            self.log.exception("Error handling request")
 
             status_int = 500
             reason = "Internal Server Error"
