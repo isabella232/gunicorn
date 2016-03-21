@@ -124,7 +124,7 @@ class Arbiter(object):
         self.log.info("Starting gunicorn %s", __version__)
 
         self.pid = os.getpid()
-        if self.cfg.pidfile is not None:
+        if self.cfg.pidfile is not None and not self.cfg.delay_pidfile:
             self.pidfile = Pidfile(self.cfg.pidfile)
             self.pidfile.create(self.pid)
         self.cfg.on_starting(self)
@@ -488,6 +488,19 @@ class Arbiter(object):
         while len(workers) > self.num_workers:
             (pid, _) = workers.pop(0)
             self.kill_worker(pid, signal.SIGTERM)
+
+        # Use worker.start_time != worker.tmp.last_update() as a proxy for worker.boot,
+        # since worker.boot is only updated in the worker process
+        if self.pidfile is None and self.cfg.pidfile is not None and self.cfg.delay_pidfile:
+            worker_values = list(self.WORKERS.values())
+            booted = True
+            for worker in worker_values:
+                if worker.tmp.last_update() == worker.start_time:
+                    booted = False
+                    break
+            if booted:
+                self.pidfile = Pidfile(self.cfg.pidfile)
+                self.pidfile.create(self.pid)
 
         active_worker_count = len(workers)
         if self._last_logged_active_worker_count != active_worker_count:
