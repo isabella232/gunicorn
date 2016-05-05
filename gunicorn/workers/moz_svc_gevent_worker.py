@@ -12,7 +12,6 @@ extra operational niceties.
 """
 
 import os
-import gc
 import sys
 import time
 import thread
@@ -41,25 +40,6 @@ _real_get_ident = thread.get_ident
 MAX_BLOCKING_TIME = float(os.environ.get("GEVENT_MAX_BLOCKING_TIME", 0.1))
 
 
-# The maximum amount of memory the worker is allowed to consume, in KB.
-# If it exceeds this amount it will (attempt to) gracefully terminate.
-MAX_MEMORY_USAGE = os.environ.get("MOZSVC_MAX_MEMORY_USAGE", "").lower()
-if MAX_MEMORY_USAGE:
-    import psutil
-    if MAX_MEMORY_USAGE.endswith("k"):
-        MAX_MEMORY_USAGE = MAX_MEMORY_USAGE[:-1]
-    MAX_MEMORY_USAGE = int(MAX_MEMORY_USAGE) * 1024
-    # How frequently to check memory usage, in seconds.
-    MEMORY_USAGE_CHECK_INTERVAL = 2
-    # If a gc brings us back below this threshold, we can avoid termination.
-    MEMORY_USAGE_RECOVERY_THRESHOLD = MAX_MEMORY_USAGE * 0.8
-
-
-# The filename for dumping memory usage data.
-MEMORY_DUMP_FILE = os.environ.get("MOZSVC_MEMORY_DUMP_FILE",
-                                  "/tmp/mozsvc-memdump")
-
-
 class MozSvcGeventWorker(GeventWorker):
     """Custom gunicorn worker with extra operational niceties.
 
@@ -71,13 +51,8 @@ class MozSvcGeventWorker(GeventWorker):
             * blocking of the gevent event-loop, with tracebacks
               logged if blocking code is found.
 
-            * overall memory usage, with forced-gc and graceful shutdown
-              if memory usage goes beyond a defined limit.
-
         * a timeout enforced on each individual request, rather than on
           inactivity of the worker as a whole.
-
-        * a signal handler to dump memory usage data on SIGUSR2.
 
     To detect eventloop blocking, the worker installs a greenlet trace
     function that increments a counter on each context switch.  A background
@@ -88,10 +63,6 @@ class MozSvcGeventWorker(GeventWorker):
     def init_process(self):
         # Check if we need a background thread to monitor memory use.
         needs_monitoring_thread = False
-        if MAX_MEMORY_USAGE:
-            self._last_memory_check_time = time.time()
-            needs_monitoring_thread = True
-
         # Set up a greenlet tracing hook to monitor for event-loop blockage,
         # but only if monitoring is both possible and required.
         if hasattr(greenlet, "settrace") and MAX_BLOCKING_TIME > 0:
@@ -119,10 +90,6 @@ class MozSvcGeventWorker(GeventWorker):
     def init_signals(self):
         # Leave all signals defined by the superclass in place.
         super(MozSvcGeventWorker, self).init_signals()
-
-        # Hook up SIGUSR2 to dump memory usage information.
-        # This will be useful for debugging memory leaks and the like.
-        signal.signal(signal.SIGUSR2, self._dump_memory_usage)
         if hasattr(signal, "siginterrupt"):
             signal.siginterrupt(signal.SIGUSR2, False)
 
@@ -153,22 +120,14 @@ class MozSvcGeventWorker(GeventWorker):
         thread.  It periodically wakes up and checks:
 
             * whether the active greenlet has switched since last checked
-            * whether memory usage is within the defined limit
-
         """
         # Find the minimum interval between checks.
-        if MAX_MEMORY_USAGE:
-            sleep_interval = MEMORY_USAGE_CHECK_INTERVAL
-            if MAX_BLOCKING_TIME and MAX_BLOCKING_TIME < sleep_interval:
-                sleep_interval = MAX_BLOCKING_TIME
-        else:
-            sleep_interval = MAX_BLOCKING_TIME
+        sleep_interval = MAX_BLOCKING_TIME
         # Run the checks in an infinite sleeping loop.
         try:
             while True:
                 _real_sleep(sleep_interval)
                 self._check_greenlet_blocking()
-                self._check_memory_usage()
         except Exception:
             # Swallow any exceptions raised during interpreter shutdown.
             # Daemonic Thread objects have this same behaviour.
@@ -194,45 +153,3 @@ class MozSvcGeventWorker(GeventWorker):
         # This might race with it being incremented in the main thread,
         # but not often enough to cause a false positive.
         self._greenlet_switch_counter = 0
-
-    def _check_memory_usage(self):
-        if not MAX_MEMORY_USAGE:
-            return
-        elapsed = time.time() - self._last_memory_check_time
-        if elapsed > MEMORY_USAGE_CHECK_INTERVAL:
-            mem_usage = psutil.Process().memory_info().rss
-            if mem_usage > MAX_MEMORY_USAGE:
-                logger.info("memory usage %d > %d, forcing gc",
-                            mem_usage, MAX_MEMORY_USAGE)
-                # Try to clean it up by forcing a full collection.
-                gc.collect()
-                mem_usage = psutil.Process().memory_info().rss
-                if mem_usage > MEMORY_USAGE_RECOVERY_THRESHOLD:
-                    # Didn't clean up enough, we'll have to terminate.
-                    logger.warn("memory usage %d > %d after gc, quitting",
-                                mem_usage, MAX_MEMORY_USAGE)
-                    self.alive = False
-            self._last_memory_check_time = time.time()
-
-    def _dump_memory_usage(self, *args):
-        """Dump memory usage data to a file.
-
-        This method writes out memory usage data for the current process into
-        a timestamped file.  By default the data is written to a file named
-        /tmp/mozsvc-memdump.<pid>.<timestamp> but this can be customized
-        with the environment variable "MOSVC_MEMORY_DUMP_FILE".
-
-        If the "meliae" package is not installed or if an error occurs during
-        processing, then the file "mozsvc-memdump.error.<pid>.<timestamp>"
-        will be written with a traceback of the error.
-        """
-        now = int(time.time())
-        try:
-            filename = "%s.%d.%d" % (MEMORY_DUMP_FILE, os.getpid(), now)
-            from meliae import scanner
-            scanner.dump_all_objects(filename)
-        except Exception:
-            filename = "%s.error.%d.%d" % (MEMORY_DUMP_FILE, os.getpid(), now)
-            with open(filename, "w") as f:
-                f.write("ERROR DUMPING MEMORY USAGE\n\n")
-                traceback.print_exc(file=f)
