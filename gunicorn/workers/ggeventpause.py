@@ -23,7 +23,13 @@ import greenlet
 import gevent.hub
 
 from gunicorn.workers.ggevent import GeventWorker
+stats = None
 
+try:
+    import statsd
+    stats = statsd.StatsClient(prefix='gunicorn.worker')
+except ImportError:
+    pass
 
 logger = logging.getLogger("mozsvc.gunicorn_worker")
 
@@ -37,7 +43,7 @@ _real_get_ident = thread.get_ident
 
 # The maximum amount of time that the eventloop can be blocked
 # without causing an error to be logged.
-MAX_BLOCKING_TIME = float(os.environ.get("GEVENT_MAX_BLOCKING_TIME", 10))
+MAX_BLOCKING_TIME = float(os.environ.get("GEVENT_MAX_BLOCKING_TIME", 1))
 
 
 class MozSvcGeventWorker(GeventWorker):
@@ -149,6 +155,8 @@ class MozSvcGeventWorker(GeventWorker):
                 stack = traceback.format_stack(frame)
                 err_log = ["Greenlet appears to be blocked\n"] + stack
                 logger.error("".join(err_log))
+                if stats is not None:
+                    stats.incr("paused")
         # Reset the count to zero.
         # This might race with it being incremented in the main thread,
         # but not often enough to cause a false positive.
