@@ -9,7 +9,7 @@ import sys
 SUPPORTED_WORKERS={
         "sync": "gunicorn.workers.sync.SyncWorker",
         "eventlet": "gunicorn.workers.geventlet.EventletWorker",
-        "gevent": "gunicorn.workers.moz_svc_gevent_worker.MozSvcGeventWorker",
+        "gevent": "gunicorn.workers.ggeventpause.MozSvcGeventWorker",
         "gevent_wsgi": "gunicorn.workers.ggevent.GeventPyWSGIWorker",
         "gevent_pywsgi": "gunicorn.workers.ggevent.GeventPyWSGIWorker",
         "tornado": "gunicorn.workers.gtornado.TornadoWorker"}
