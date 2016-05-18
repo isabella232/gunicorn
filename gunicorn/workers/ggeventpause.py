@@ -43,7 +43,7 @@ _real_get_ident = thread.get_ident
 
 # The maximum amount of time that the eventloop can be blocked
 # without causing an error to be logged.
-MAX_BLOCKING_TIME = float(os.environ.get("GEVENT_MAX_BLOCKING_TIME", 1))
+MAX_BLOCKING_TIME = float(os.environ.get("GEVENT_MAX_BLOCKING_TIME", 10))
 
 
 class MozSvcGeventWorker(GeventWorker):
