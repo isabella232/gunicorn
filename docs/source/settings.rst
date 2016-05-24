@@ -445,9 +445,9 @@ access_log_format
 
 The access log format.
 
-==========   ===========
+===========  ===========
 Identifier   Description
-==========   ===========
+===========  ===========
 h            remote address
 l            '-'
 u            currently '-', may be user name in future releases
@@ -464,7 +464,7 @@ p            process ID
 {Header}i    request header
 {Header}o    response header
 {Variable}e  environment variable
-==========   ===========
+===========  ===========
 
 errorlog
 ~~~~~~~~
