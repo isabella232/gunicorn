@@ -42,6 +42,11 @@ class BaseSocket(object):
 
     def set_options(self, sock, bound=False):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Not all platforms have SO_REUSEPORT available.
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        except AttributeError:
+            pass
         if not bound:
             self.bind(sock)
         sock.setblocking(0)
