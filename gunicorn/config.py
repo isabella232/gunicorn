@@ -1678,5 +1678,5 @@ class SpawnWorkerSleepTime(Setting):
     validator = validate_float
     default = 0.1
     desc = """\
-    Time to sleep between spawning workers.
+    Minimum time to sleep between spawning workers. The value can be jittered up to 2x.
     """
