@@ -17,6 +17,7 @@ if PY3:
     class_types = type,
     text_type = str
     binary_type = bytes
+    float_types = float
 
     MAXSIZE = sys.maxsize
 else:
@@ -25,6 +26,7 @@ else:
     class_types = (type, types.ClassType)
     text_type = unicode
     binary_type = str
+    float_types = float
 
     if sys.platform == "java":
         # Jython always uses 32 bits.

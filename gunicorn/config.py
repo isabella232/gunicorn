@@ -307,6 +307,10 @@ def validate_pos_int(val):
         raise ValueError("Value must be positive: %s" % val)
     return val
 
+def validate_float(val):
+    if not isinstance(val, six.float_types):
+        raise TypeError("Value is not a float: %s" % val)
+    return val
 
 def validate_string(val):
     if val is None:
@@ -1665,4 +1669,14 @@ class StatsdHost(Setting):
     validator = validate_hostport
     desc ="""\
     host:port of the statsd server to log to
+    """
+
+class SpawnWorkerSleepTime(Setting):
+    name = "spawn_worker_sleep_time"
+    section = "Worker Processes"
+    cli = ['--spawn-worker-sleep-time']
+    validator = validate_float
+    default = 0.01
+    desc = """\
+    Time to sleep between spawning workers.
     """
