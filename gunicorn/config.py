@@ -1676,7 +1676,7 @@ class SpawnWorkerSleepTime(Setting):
     section = "Worker Processes"
     cli = ['--spawn-worker-sleep-time']
     validator = validate_float
-    default = 0.01
+    default = 0.1
     desc = """\
     Time to sleep between spawning workers.
     """
