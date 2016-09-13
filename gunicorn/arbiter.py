@@ -131,7 +131,7 @@ class Arbiter(object):
         if not self.LISTENERS:
             self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
 
-    # self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set.
+        # self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set.
         if not self.WORKER_LISTENERS and self.cfg.worker_address :
             self.WORKER_LISTENERS = create_sockets(self.cfg,self.cfg.worker_address, self.log)
             worker_listeners_str = ",".join([str(wl) for wl in self.WORKER_LISTENERS])
