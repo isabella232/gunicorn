@@ -1695,5 +1695,5 @@ class DomainSocketPerWorker(Setting):
     default = []
     desc = '''\
     When value is set with a list of addresses, each worker will be assigned one socket 
-    from the list in addition to the list of addresses specified in the parameter bind. 
+    from the list in addition to default addresses specfied by the parameter bind.
     '''

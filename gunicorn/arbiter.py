@@ -134,7 +134,7 @@ class Arbiter(object):
 	# self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set. 
         if not self.WORKER_LISTENERS and self.cfg.worker_address :
             self.WORKER_LISTENERS = create_sockets(self.cfg,self.cfg.worker_address, self.log)
-            worker_listeners_str = ",".join([str(ws) for ws in self.WORKER_LISTENERS])
+            worker_listeners_str = ",".join([str(wl) for wl in self.WORKER_LISTENERS])
 
         listeners_str = ",".join([str(l) for l in self.LISTENERS])
         self.log.debug("Arbiter booted")
@@ -430,7 +430,7 @@ class Arbiter(object):
 	# worker_address defaults to []. Only create sockets if the list is not empty.
         if self.cfg.worker_address:
             self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
-            self.log.info("Worker listening at: %s", ",".join([str(ws) for ws in self.WORKER_LISTENERS]))
+            self.log.info("Worker listening at: %s", ",".join([str(wl) for wl in self.WORKER_LISTENERS]))
 
         # do some actions on reload
         self.cfg.on_reload(self)
