@@ -133,7 +133,7 @@ class Arbiter(object):
 
         # self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set.
         if not self.WORKER_LISTENERS and self.cfg.worker_address :
-            self.WORKER_LISTENERS = create_sockets(self.cfg,self.cfg.worker_address, self.log)
+            self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
             worker_listeners_str = ",".join([str(wl) for wl in self.WORKER_LISTENERS])
 
         listeners_str = ",".join([str(l) for l in self.LISTENERS])
@@ -543,7 +543,7 @@ class Arbiter(object):
         # When self.WORKER_SOCKETS is populated, we are to assign one worker listener per worker class.
         if self.WORKER_LISTENERS:
             listeners.append(self.WORKER_LISTENERS[self.worker_address_index])
-            self.worker_address_index = (self.worker_address_index + 1 )% len(self.WORKER_LISTENERS)
+            self.worker_address_index = (self.worker_address_index + 1) % len(self.WORKER_LISTENERS)
         worker = self.worker_class(self.worker_age, self.pid, listeners,
                                     self.app, self.timeout / 2.0,
                                     self.cfg, self.log)
