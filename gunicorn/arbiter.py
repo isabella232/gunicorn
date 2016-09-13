@@ -11,7 +11,6 @@ import signal
 import sys
 import time
 import traceback
-import copy
 
 from gunicorn.errors import HaltServer, AppImportError
 from gunicorn.pidfile import Pidfile
@@ -545,6 +544,8 @@ class Arbiter(object):
         else:
             listeners = self.LISTENERS
         self.worker_age += 1
+        self.log.debug("Spawning worker of age: %d with the following listeners: %s",
+                       self.worker_age, ",".join([str(l) for l in listeners]))
         worker = self.worker_class(self.worker_age, self.pid, listeners,
                                     self.app, self.timeout / 2.0,
                                     self.cfg, self.log)
