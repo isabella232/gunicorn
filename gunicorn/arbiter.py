@@ -11,6 +11,7 @@ import signal
 import sys
 import time
 import traceback
+import copy
 
 from gunicorn.errors import HaltServer, AppImportError
 from gunicorn.pidfile import Pidfile
@@ -38,6 +39,7 @@ class Arbiter(object):
     START_CTX = {}
 
     LISTENERS = []
+    WORKER_LISTENERS = []
     WORKERS = {}
     PIPE = []
 
@@ -59,6 +61,7 @@ class Arbiter(object):
         self.pidfile = None
         self.worker_age = 0
         self.reexec_pid = 0
+        self.worker_listeners_index = 0
         self.master_name = "Master"
 
         cwd = util.getcwd()
@@ -126,11 +129,18 @@ class Arbiter(object):
 
         self.init_signals()
         if not self.LISTENERS:
-            self.LISTENERS = create_sockets(self.cfg, self.log)
+            self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
+
+	# self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set. 
+        if not self.WORKER_LISTENERS and self.cfg.worker_address :
+            self.WORKER_LISTENERS = create_sockets(self.cfg,self.cfg.worker_address, self.log)
+            worker_listeners_str = ",".join([str(ws) for ws in self.WORKER_LISTENERS])
 
         listeners_str = ",".join([str(l) for l in self.LISTENERS])
         self.log.debug("Arbiter booted")
         self.log.info("Listening at: %s (%s)", listeners_str, self.pid)
+        if self.WORKER_LISTENERS:
+            self.log.info("Worker sockets listening at: %s", worker_listeners_str)
         self.log.info("Using worker: %s", self.cfg.worker_class_str)
 
         self.cfg.when_ready(self)
@@ -384,7 +394,7 @@ class Arbiter(object):
 
     def reload(self):
         old_address = self.cfg.address
-
+        old_worker_address = self.cfg.worker_address
         # reset old environement
         for k in self.cfg.env:
             if k in self.cfg.env_orig:
@@ -410,8 +420,17 @@ class Arbiter(object):
             # close all listeners
             [l.close() for l in self.LISTENERS]
             # init new listeners
-            self.LISTENERS = create_sockets(self.cfg, self.log)
-            self.log.info("Listening at: %s", ",".join(str(self.LISTENERS)))
+            self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
+            self.log.info("Listening at: %s", ",".join([str(l) for l in self.LISTENERS]))
+
+        # Clean up any worker listeners if it has changed
+	if old_worker_address != self.cfg.worker_address:
+            # close all worker sockets
+            [wl.close() for wl in self.WORKER_LISTENERS]
+	# worker_address defaults to []. Only create sockets if the list is not empty.
+        if self.cfg.worker_address:
+            self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
+            self.log.info("Worker listening at: %s", ",".join([str(ws) for ws in self.WORKER_LISTENERS]))
 
         # do some actions on reload
         self.cfg.on_reload(self)
@@ -519,7 +538,13 @@ class Arbiter(object):
 
     def spawn_worker(self):
         self.worker_age += 1
-        worker = self.worker_class(self.worker_age, self.pid, self.LISTENERS,
+	# self.LISTENERS is the list of default sockets that workers listen on.
+        listeners = copy.copy(self.LISTENERS)
+	# When self.WORKER_SOCKETS is populated, we are to assign one worker listener per worker class.
+	if self.WORKER_LISTENERS:
+            listeners.append(self.WORKER_LISTENERS[self.worker_address_index])
+            self.worker_address_index = (self.worker_address_index + 1 )% len(self.WORKER_LISTENERS)
+        worker = self.worker_class(self.worker_age, self.pid, listeners,
                                     self.app, self.timeout / 2.0,
                                     self.cfg, self.log)
         self.cfg.pre_fork(self, worker)

@@ -143,7 +143,7 @@ def _sock_type(addr):
     return sock_type
 
 
-def create_sockets(conf, log):
+def create_sockets(conf, address, log):
     """
     Create a new socket for the given address. If the
     address is a tuple, a TCP socket is created. If it
@@ -175,12 +175,12 @@ def create_sockets(conf, log):
         del os.environ['LISTEN_PID'], os.environ['LISTEN_FDS']
 
         if listeners:
-            log.debug('Socket activation sockets: %s',
+	    log.debug('Socket activation sockets: %s',
                     ",".join([str(l) for l in listeners]))
             return listeners
 
     # get it only once
-    laddr = conf.address
+    laddr = address
 
     # check ssl config early to raise the error on startup
     # only the certfile is needed since it can contains the keyfile

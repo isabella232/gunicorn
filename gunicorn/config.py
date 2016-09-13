@@ -121,6 +121,11 @@ class Config(object):
         return [util.parse_address(six.bytes_to_str(bind)) for bind in s]
 
     @property
+    def worker_address(self):
+        s = self.settings['domain_socket_per_worker'].get()
+        return [util.parse_address(six.bytes_to_str(ds)) for ds in s]
+
+    @property
     def uid(self):
         return self.settings['user'].get()
 
@@ -1680,3 +1685,15 @@ class SpawnWorkerSleepTime(Setting):
     desc = """\
     Minimum time to sleep between spawning workers. The value can be jittered up to 2x.
     """
+
+class DomainSocketPerWorker(Setting):
+    name = "domain_socket_per_worker"
+    action= "append"
+    section = 'Server Socket'
+    cli = ['--domain-socket-per-worker']
+    validator = validate_list_string
+    default = []
+    desc = '''\
+    When value is set with a list of addresses, each worker will be assigned one socket 
+    from the list in addition to the list of addresses specified in the parameter bind. 
+    '''
