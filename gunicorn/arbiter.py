@@ -131,7 +131,7 @@ class Arbiter(object):
         if not self.LISTENERS:
             self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
 
-	# self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set. 
+    # self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set.
         if not self.WORKER_LISTENERS and self.cfg.worker_address :
             self.WORKER_LISTENERS = create_sockets(self.cfg,self.cfg.worker_address, self.log)
             worker_listeners_str = ",".join([str(wl) for wl in self.WORKER_LISTENERS])
@@ -424,10 +424,10 @@ class Arbiter(object):
             self.log.info("Listening at: %s", ",".join([str(l) for l in self.LISTENERS]))
 
         # Clean up any worker listeners if it has changed
-	if old_worker_address != self.cfg.worker_address:
+        if old_worker_address != self.cfg.worker_address:
             # close all worker sockets
             [wl.close() for wl in self.WORKER_LISTENERS]
-	# worker_address defaults to []. Only create sockets if the list is not empty.
+        # worker_address defaults to []. Only create sockets if the list is not empty.
         if self.cfg.worker_address:
             self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
             self.log.info("Worker listening at: %s", ",".join([str(wl) for wl in self.WORKER_LISTENERS]))
@@ -538,10 +538,10 @@ class Arbiter(object):
 
     def spawn_worker(self):
         self.worker_age += 1
-	# self.LISTENERS is the list of default sockets that workers listen on.
+        # self.LISTENERS is the list of default sockets that workers listen on.
         listeners = copy.copy(self.LISTENERS)
-	# When self.WORKER_SOCKETS is populated, we are to assign one worker listener per worker class.
-	if self.WORKER_LISTENERS:
+        # When self.WORKER_SOCKETS is populated, we are to assign one worker listener per worker class.
+        if self.WORKER_LISTENERS:
             listeners.append(self.WORKER_LISTENERS[self.worker_address_index])
             self.worker_address_index = (self.worker_address_index + 1 )% len(self.WORKER_LISTENERS)
         worker = self.worker_class(self.worker_age, self.pid, listeners,

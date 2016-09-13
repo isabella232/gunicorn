@@ -175,7 +175,7 @@ def create_sockets(conf, address, log):
         del os.environ['LISTEN_PID'], os.environ['LISTEN_FDS']
 
         if listeners:
-	    log.debug('Socket activation sockets: %s',
+            log.debug('Socket activation sockets: %s',
                     ",".join([str(l) for l in listeners]))
             return listeners
 
