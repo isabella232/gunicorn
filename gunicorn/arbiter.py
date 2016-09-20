@@ -382,6 +382,8 @@ class Arbiter(object):
 
         environ = self.cfg.env_orig.copy()
         fds = [l.fileno() for l in self.LISTENERS]
+        if self.WORKER_LISTENERS:
+            fds.extend([wl.fileno() for wl in self.LISTENERS])
         environ['GUNICORN_FD'] = ",".join([str(fd) for fd in fds])
 
         os.chdir(self.START_CTX['cwd'])
