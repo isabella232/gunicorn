@@ -193,8 +193,10 @@ def create_sockets(conf, address, log):
     # sockets are already bound
     if 'GUNICORN_FD' in os.environ:
         fds = os.environ.pop('GUNICORN_FD').split(',')
+        log.debug( "addr is %s", laddr)
         for i, fd in enumerate(fds):
             fd = int(fd)
+            log.debug("i value is %d fd is %d",i, fd)
             addr = laddr[i]
             sock_type = _sock_type(addr)
 
