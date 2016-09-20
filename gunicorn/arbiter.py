@@ -381,7 +381,8 @@ class Arbiter(object):
             return
 
         environ = self.cfg.env_orig.copy()
-        fds = [l.fileno() for l in self.LISTENERS]
+        fds = [l.fileno() for l in self.LISTENERS + self.WORKER_LISTENERS]
+        self.log.debug("GUNICORN_FD is set to: %s", ",".join([str(fd) for fd in fds]))
         environ['GUNICORN_FD'] = ",".join([str(fd) for fd in fds])
 
         os.chdir(self.START_CTX['cwd'])
