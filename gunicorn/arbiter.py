@@ -420,6 +420,7 @@ class Arbiter(object):
             for l in self.LISTENERS:
                 l.close()
             # init new listeners
+            self.log.debug("GUNICORN_FD is set to: %s",os.environ['GUNICORN_FD'])
             self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
             self.log.info("Listening at: %s", ",".join([str(l) for l in self.LISTENERS]))
 
@@ -430,6 +431,7 @@ class Arbiter(object):
                 wl.close()
         # worker_address defaults to []. Only create sockets if the list is not empty.
         if self.cfg.worker_address:
+            self.log.debug("GUNICORN_FD is set to: %s",os.environ['GUNICORN_FD'])
             self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
             self.log.info("Worker listening at: %s", ",".join([str(wl) for wl in self.WORKER_LISTENERS]))
 
