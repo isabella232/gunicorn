@@ -127,11 +127,11 @@ class Arbiter(object):
 
         self.init_signals()
         if not self.LISTENERS:
-            self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
+            self.LISTENERS = create_sockets(self.cfg, self.cfg.address, 'GUNICORN_FD', self.log)
 
         # self.cfg.worker_address is an optional parameter. Only create sockets if the value has been set.
         if not self.WORKER_LISTENERS and self.cfg.worker_address :
-            self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
+            self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, 'GUNICORN_FD_WORKERS', self.log)
             worker_listeners_str = ",".join([str(wl) for wl in self.WORKER_LISTENERS])
 
         listeners_str = ",".join([str(l) for l in self.LISTENERS])
