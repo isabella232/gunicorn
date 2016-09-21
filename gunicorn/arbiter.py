@@ -381,9 +381,13 @@ class Arbiter(object):
             return
 
         environ = self.cfg.env_orig.copy()
-        fds = [l.fileno() for l in self.LISTENERS + self.WORKER_LISTENERS]
+        fds = [l.fileno() for l in self.LISTENERS]
         self.log.debug("GUNICORN_FD is set to: %s", ",".join([str(fd) for fd in fds]))
         environ['GUNICORN_FD'] = ",".join([str(fd) for fd in fds])
+        if self.WORKER_LISTENERS:
+            fds = [wl.fileno() for wl in self.WORKER_LISTENERS]
+            self.log.debug("GUNICORN_FD is set to: %s", ",".join([str(fd) for fd in fds]))
+            environ['GUNICORN_FD_WORKERS'] = ",".join([str(fd) for fd in fds])
 
         os.chdir(self.START_CTX['cwd'])
         self.cfg.pre_exec(self)
@@ -421,7 +425,7 @@ class Arbiter(object):
                 l.close()
             # init new listeners
             self.log.debug("GUNICORN_FD is set to: %s",os.environ['GUNICORN_FD'])
-            self.LISTENERS = create_sockets(self.cfg, self.cfg.address, self.log)
+            self.LISTENERS = create_sockets(self.cfg, self.cfg.address, 'GUNICORN_FD', self.log)
             self.log.info("Listening at: %s", ",".join([str(l) for l in self.LISTENERS]))
 
         # Clean up any worker listeners if it has changed
@@ -432,7 +436,7 @@ class Arbiter(object):
         # worker_address defaults to []. Only create sockets if the list is not empty.
         if self.cfg.worker_address:
             self.log.debug("GUNICORN_FD is set to: %s",os.environ['GUNICORN_FD'])
-            self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address, self.log)
+            self.WORKER_LISTENERS = create_sockets(self.cfg, self.cfg.worker_address,'GUNICORN_FD_WORKERS' , self.log)
             self.log.info("Worker listening at: %s", ",".join([str(wl) for wl in self.WORKER_LISTENERS]))
 
         # do some actions on reload

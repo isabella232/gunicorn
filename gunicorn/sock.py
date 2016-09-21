@@ -143,7 +143,7 @@ def _sock_type(addr):
     return sock_type
 
 
-def create_sockets(conf, address, log):
+def create_sockets(conf, address, environment_name, log):
     """
     Create a new socket for the given address. If the
     address is a tuple, a TCP socket is created. If it
@@ -191,8 +191,8 @@ def create_sockets(conf, address, log):
         raise ValueError('keyfile "%s" does not exist' % conf.keyfile)
 
     # sockets are already bound
-    if 'GUNICORN_FD' in os.environ:
-        fds = os.environ.pop('GUNICORN_FD').split(',')
+    if environment_name in os.environ:
+        fds = os.environ.pop(environment_name).split(',')
         log.debug( "addr is %s", laddr)
         for i, fd in enumerate(fds):
             fd = int(fd)
