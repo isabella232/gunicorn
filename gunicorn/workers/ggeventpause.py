@@ -155,6 +155,9 @@ class MozSvcGeventWorker(GeventWorker):
         """
         # Find the minimum interval between checks.
         sleep_interval = MAX_BLOCKING_TIME
+
+        logger.info("Starting pause detector for greenlets taking longer than %s seconds", MAX_BLOCKING_TIME)
+
         # Run the checks in an infinite sleeping loop.
         try:
             while not self._stop_event.isSet():
@@ -166,6 +169,8 @@ class MozSvcGeventWorker(GeventWorker):
             if sys is not None:
                 raise
         finally:
+            if logger:
+                logger.info("Pause detector is exiting")
             self._stopped_monitoring.set()
 
     def _check_greenlet_blocking(self):
