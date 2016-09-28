@@ -11,7 +11,7 @@ This module provides a custom GeventWorker subclass for gunicorn, with some
 extra operational niceties.
 """
 
-import logging
+import greenlet
 import os
 import signal
 import sys
@@ -21,7 +21,7 @@ import time
 import traceback
 
 import gevent.hub
-import greenlet
+from lyft import logging
 
 from gunicorn.workers.ggevent import GeventWorker
 
@@ -34,7 +34,7 @@ try:
 except ImportError:
     pass
 
-logger = logging.getLogger("mozsvc.gunicorn_worker")
+logger = logging.getLogger(__name__)
 
 # Take references to un-monkey-patched versions of stuff we need.
 # Monkey-patching will have already been done by the time we come to
