@@ -48,6 +48,11 @@ _real_get_ident = thread.get_ident
 # without causing an error to be logged.
 MAX_BLOCKING_TIME = float(os.environ.get("GEVENT_MAX_BLOCKING_TIME", 10))
 
+# Time at startup where we wont log pauses
+# Use to disable pause detection while the service loads
+# and reaches steady state
+WARMUP_TIME = float(os.environ.get("GEVENT_PAUSE_DETECTION_WARMUP_TIME", 10))
+
 
 class MozSvcGeventWorker(GeventWorker):
     """Custom gunicorn worker with extra operational niceties.
@@ -155,6 +160,9 @@ class MozSvcGeventWorker(GeventWorker):
         """
         # Find the minimum interval between checks.
         sleep_interval = MAX_BLOCKING_TIME
+
+        # give the service time to reach steady state
+        _real_sleep(WARMUP_TIME)
 
         logger.info("Starting pause detector for greenlets taking longer than %s seconds", MAX_BLOCKING_TIME)
 
