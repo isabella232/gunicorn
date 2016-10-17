@@ -614,7 +614,7 @@ class Arbiter(object):
 
         for _ in range(self.num_workers - len(self.WORKERS.keys())):
             self.spawn_worker()
-            time.sleep(0.1 * random.random())
+            time.sleep(self.cfg.spawn_worker_sleep_time * random.uniform(1,2))
 
     def kill_workers(self, sig):
         """\
