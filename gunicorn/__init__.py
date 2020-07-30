@@ -4,5 +4,5 @@
 # See the NOTICE for more information.
 
 version_info = (20, 0, 4)
-__version__ = ".".join([str(v) for v in version_info] + ['post1'])
+__version__ = ".".join([str(v) for v in version_info] + ['post2'])
 SERVER_SOFTWARE = "gunicorn/%s" % __version__
